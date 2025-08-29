@@ -23,8 +23,8 @@
 
         <ImageView
             android:id="@+id/logo"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="27dp"
+            android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
             android:src="@drawable/sadaqa_logo" />
 
@@ -33,23 +33,23 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/roboto"
             android:includeFontPadding="false"
             android:text="Sadaqa Welfare Fund"
             android:textColor="#FFFFFFFF"
-            android:textSize="22sp"
             android:textStyle="bold" />
 
 
     </LinearLayout>
 
     <TextView
+
         android:layout_width="match_parent"
-        android:layout_height="2dp"
+        android:layout_height="1dp"
         android:layout_marginTop="8dp"
         android:padding="0dp"
         android:text="@null" />
-    <!-- META: sunrise (left) + updated (right) -->
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -68,41 +68,32 @@
 
         <TextView
             android:id="@+id/sunrise"
-            android:layout_width="0dp"
+            android:layout_width="170dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/roboto"
             android:includeFontPadding="false"
             android:text="06:33 AM"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/spacer"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:text="@null" />
+            android:textColor="#FFFFFFFF" />
 
 
         <TextView
             android:id="@+id/hijri"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/roboto"
             android:includeFontPadding="false"
             android:text="19"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp" />
+            android:textColor="#FFFFFFFF" />
+
         <TextView
             android:id="@+id/hijri_month"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif"
+            android:fontFamily="@font/roboto"
             android:includeFontPadding="false"
             android:text=" Safar"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp" />
+            android:textColor="#FFFFFFFF" />
 
 
     </LinearLayout>
@@ -111,13 +102,12 @@
         android:id="@+id/updated"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/roboto"
         android:includeFontPadding="false"
-        android:text="Updated: 14:06"
-        android:textColor="#CCFFFFFF"
-        android:textSize="13sp"
         android:paddingVertical="4dp"
-        />
+        android:text="Updated: 14:06"
+
+        android:textColor="#CCFFFFFF" />
 
 
     <TextView
@@ -126,14 +116,14 @@
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
         android:background="#33FFFFFF"
-        android:text="@null"
-        android:padding="0dp" />
+        android:padding="0dp"
+        android:text="@null" />
 
     <!-- TIMES PLATE -->
     <LinearLayout
         android:id="@+id/times_plate"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="85dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/plate_bg_glass"
         android:orientation="horizontal"
@@ -143,35 +133,53 @@
         android:paddingBottom="10dp"
         android:weightSum="5">
 
-        <!-- Column template (repeat for all) -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Fajr"
+                android:textAlignment="center"
                 android:textColor="#E6FFFFFF"
-                android:textSize="14sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:layout_marginTop="8dp"
+                android:padding="0dp"
+                android:text="@null" />
 
             <TextView
                 android:id="@+id/fajr"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="05:11 AM"
+                android:text="05:11"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/fajr_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@null"
+                android:textColor="#CCFFFFFF" />
         </LinearLayout>
 
         <!-- Dhuhr -->
@@ -179,30 +187,48 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Dhuhr"
                 android:textColor="#E6FFFFFF"
-                android:textSize="14sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="8dp"
+                android:padding="0dp"
+                android:text="@null" />
 
             <TextView
                 android:id="@+id/dhuhr"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="12:21 PM"
+                android:text="12:21"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/dhuhr_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@null"
+                android:textColor="#CCFFFFFF" />
         </LinearLayout>
 
         <!-- Asr -->
@@ -210,30 +236,48 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Asr"
                 android:textColor="#E6FFFFFF"
-                android:textSize="14sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="8dp"
+                android:padding="0dp"
+                android:text="@null" />
 
             <TextView
                 android:id="@+id/asr"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="02:51 PM"
+                android:text="02:51"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/asr_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@null"
+                android:textColor="#CCFFFFFF" />
         </LinearLayout>
 
         <!-- Maghrib -->
@@ -241,30 +285,48 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Maghrib"
                 android:textColor="#E6FFFFFF"
-                android:textSize="14sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="8dp"
+                android:padding="0dp"
+                android:text="@null" />
 
             <TextView
                 android:id="@+id/maghrib"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="05:45 PM"
+                android:text="05:45"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/maghrib_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@null"
+                android:textColor="#CCFFFFFF" />
         </LinearLayout>
 
         <!-- Isha -->
@@ -272,30 +334,48 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:gravity="center"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:text="Isha"
                 android:textColor="#E6FFFFFF"
-                android:textSize="14sp"
+
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="8dp"
+                android:padding="0dp"
+                android:text="@null" />
 
             <TextView
                 android:id="@+id/isha"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
+                android:fontFamily="@font/roboto"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="06:15 PM"
+                android:text="06:15"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/isha_ampm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@null"
+                android:textColor="#CCFFFFFF" />
+
         </LinearLayout>
 
     </LinearLayout>

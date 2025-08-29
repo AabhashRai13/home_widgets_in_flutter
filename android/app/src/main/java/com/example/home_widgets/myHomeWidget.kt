@@ -8,6 +8,8 @@ import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetPlugin
+import android.app.PendingIntent
+import android.content.Intent
 
 class MyHomeWidget : AppWidgetProvider() {
 
@@ -39,17 +41,32 @@ class MyHomeWidget : AppWidgetProvider() {
         val prefs = HomeWidgetPlugin.getData(ctx)
         fun g(k: String) = prefs.getString(k, "—")
 
+        val (fajrTime, fajrAmPm)         = splitTimeAndAmPm(g("fajr"))
+        val (dhuhrTime, dhuhrAmPm)       = splitTimeAndAmPm(g("dhuhr"))
+        val (asrTime, asrAmPm)           = splitTimeAndAmPm(g("asr"))
+        val (maghribTime, maghribAmPm)   = splitTimeAndAmPm(g("maghrib"))
+        val (ishaTime, ishaAmPm)         = splitTimeAndAmPm(g("isha"))
+
         val rv = RemoteViews(ctx.packageName, R.layout.my_home_widget).apply {
             // header
             setTextViewText(R.id.company, prefs.getString("company_name", "Sadaqa Welfare Fund"))
             setTextViewText(R.id.updated, "Updated: ${g("last_updated")}")
 
             // times
-            setTextViewText(R.id.fajr, g("fajr"))
-            setTextViewText(R.id.dhuhr, g("dhuhr"))
-            setTextViewText(R.id.asr, g("asr"))
-            setTextViewText(R.id.maghrib, g("maghrib"))
-            setTextViewText(R.id.isha, g("isha"))
+            setTextViewText(R.id.fajr, fajrTime)
+            setTextViewText(R.id.fajr_ampm, fajrAmPm)
+
+            setTextViewText(R.id.dhuhr, dhuhrTime)
+            setTextViewText(R.id.dhuhr_ampm, dhuhrAmPm)
+
+            setTextViewText(R.id.asr, asrTime)
+            setTextViewText(R.id.asr_ampm, asrAmPm)
+
+            setTextViewText(R.id.maghrib, maghribTime)
+            setTextViewText(R.id.maghrib_ampm, maghribAmPm)
+
+            setTextViewText(R.id.isha, ishaTime)
+            setTextViewText(R.id.isha_ampm, ishaAmPm)
 
             // extras
             setTextViewText(R.id.hijri, g("hijri_date"))
@@ -59,17 +76,17 @@ class MyHomeWidget : AppWidgetProvider() {
             setViewVisibility(R.id.sunrise, if (style.showExtras) View.VISIBLE else View.GONE)
 
             // apply adaptive sizes/padding/background
-            setTextViewTextSize(R.id.company, TypedValue.COMPLEX_UNIT_SP, style.titleSp)
-            setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_SP, style.metaSp)
+            setTextViewTextSize(R.id.company, TypedValue.COMPLEX_UNIT_DIP, style.titleSp)
+            setTextViewTextSize(R.id.updated, TypedValue.COMPLEX_UNIT_DIP, style.metaSp)
 
-            setTextViewTextSize(R.id.fajr,    TypedValue.COMPLEX_UNIT_SP, style.timeSp)
-            setTextViewTextSize(R.id.dhuhr,   TypedValue.COMPLEX_UNIT_SP, style.timeSp)
-            setTextViewTextSize(R.id.asr,     TypedValue.COMPLEX_UNIT_SP, style.timeSp)
-            setTextViewTextSize(R.id.maghrib, TypedValue.COMPLEX_UNIT_SP, style.timeSp)
-            setTextViewTextSize(R.id.isha,    TypedValue.COMPLEX_UNIT_SP, style.timeSp)
-            setTextViewTextSize(R.id.hijri,   TypedValue.COMPLEX_UNIT_SP, style.metaSp)
-            setTextViewTextSize(R.id.hijri_month,   TypedValue.COMPLEX_UNIT_SP, style.metaSp)
-            setTextViewTextSize(R.id.sunrise, TypedValue.COMPLEX_UNIT_SP, style.metaSp)
+            setTextViewTextSize(R.id.fajr,    TypedValue.COMPLEX_UNIT_DIP, style.timeSp)
+            setTextViewTextSize(R.id.dhuhr,   TypedValue.COMPLEX_UNIT_DIP, style.timeSp)
+            setTextViewTextSize(R.id.asr,     TypedValue.COMPLEX_UNIT_DIP, style.timeSp)
+            setTextViewTextSize(R.id.maghrib, TypedValue.COMPLEX_UNIT_DIP, style.timeSp)
+            setTextViewTextSize(R.id.isha,    TypedValue.COMPLEX_UNIT_DIP, style.timeSp)
+            setTextViewTextSize(R.id.hijri,   TypedValue.COMPLEX_UNIT_DIP, style.metaSp)
+            setTextViewTextSize(R.id.hijri_month,   TypedValue.COMPLEX_UNIT_DIP, style.metaSp)
+            setTextViewTextSize(R.id.sunrise, TypedValue.COMPLEX_UNIT_DIP, style.metaSp)
 
             setViewPadding(
                 R.id.root,
@@ -80,7 +97,22 @@ class MyHomeWidget : AppWidgetProvider() {
             // if you create alternate backgrounds, you can switch them here:
             // setInt(R.id.root, "setBackgroundResource", style.bgRes)
         }
+// Make whole widget open the app when tapped
+        val launchIntent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+            ?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
 
+        if (launchIntent != null) {
+            val pi = PendingIntent.getActivity(
+                ctx,
+                0,
+                launchIntent, 
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            rv.setOnClickPendingIntent(R.id.root, pi)        // tap anywhere
+            // (optional) rv.setOnClickPendingIntent(R.id.times_plate, pi)
+        }
         mgr.updateAppWidget(id, rv)
     }
 
@@ -119,3 +151,11 @@ private fun Int.dpToPx(ctx: Context): Int =
         this.toFloat(),
         ctx.resources.displayMetrics
     ).toInt()
+
+private fun splitTimeAndAmPm(raw: String?): Pair<String, String> {
+    if (raw.isNullOrBlank()) return "—" to ""
+    val m = Regex("""^\s*([0-9]{1,2}:[0-9]{2})\s*([AP]M)?\s*$""").find(raw)
+    val time = m?.groupValues?.getOrNull(1) ?: raw.trim()
+    val ampm = m?.groupValues?.getOrNull(2) ?: ""
+    return time to ampm
+}
