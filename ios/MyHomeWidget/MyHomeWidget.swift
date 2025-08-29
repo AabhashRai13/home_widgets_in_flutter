@@ -16,37 +16,81 @@ extension Color {
     }
 }
 private let APP_GROUP_ID = "group.homeTestScreenApp"
+private let API_URL = URL(string: "https://apis.sadaqawelfarefund.ngo/api/get_prayer_times_for_today")!
 
 struct PrayerTimesProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry { .placeholder }
 
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        loadFromShared() ?? .placeholder
-    }
+      func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
+          await fetchFromAPI() ?? loadFromShared() ?? .placeholder
+      }
 
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        let entry = loadFromShared() ?? .placeholder
-        // Ask WidgetKit to wake us around the next needed UI change
-        let next = entry.nextRefreshDate() ?? Calendar.current.date(byAdding: .minute, value: 60, to: Date())!
-        return Timeline(entries: [entry], policy: .after(next))
-    }
+      func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
+          // Try API, fall back to shared
+          let entry = await fetchFromAPI() ?? loadFromShared() ?? .placeholder
+          let next = entry.nextRefreshDate() ?? Calendar.current.date(byAdding: .minute, value: 60, to: Date())!
+          return Timeline(entries: [entry], policy: .after(next))
+      }
 
-    private func loadFromShared() -> SimpleEntry? {
-        guard let ud = UserDefaults(suiteName: APP_GROUP_ID) else { return nil }
-        func val(_ key: String, _ def: String = "—") -> String { ud.string(forKey: key) ?? def }
-        return SimpleEntry(
-            date: Date(),
-            fajr: val("fajr"),
-            dhuhr: val("dhuhr"),
-            asr: val("asr"),
-            maghrib: val("maghrib"),
-            isha: val("isha"),
-            sunrise: val("sunrise"),
-            hijriDate: val("hijri_date"),
-            companyName: val("company_name", "Sadaqa Welfare Fund"),
-            lastUpdated: val("last_updated", "Never")
-        )
-    }
+      // MARK: - Data sources
+
+      private func fetchFromAPI() async -> SimpleEntry? {
+          do {
+              let (data, _) = try await URLSession.shared.data(from: API_URL)
+              // Adjust decoding to your real JSON shape
+              if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                  func s(_ k: String, _ def: String = "—") -> String { (json[k] as? String) ?? def }
+                  let entry = SimpleEntry(
+                      date: Date(),
+                      fajr: s("fajr"),
+                      dhuhr: s("dhuhr"),
+                      asr: s("asr"),
+                      maghrib: s("maghrib"),
+                      isha: s("isha"),
+                      sunrise: s("sunrise"),
+                      hijriDate: s("hijri_date"),
+                      companyName: s("company_name", "Sadaqa Welfare Fund"),
+                      lastUpdated: ISO8601DateFormatter().string(from: Date())
+                  )
+                  // Optional: persist for snapshot/offline
+                  saveToShared(entry)
+                  return entry
+              }
+          } catch {
+              // Silent fallback
+          }
+          return nil
+      }
+
+      private func loadFromShared() -> SimpleEntry? {
+          guard let ud = UserDefaults(suiteName: APP_GROUP_ID) else { return nil }
+          func val(_ key: String, _ def: String = "—") -> String { ud.string(forKey: key) ?? def }
+          return SimpleEntry(
+              date: Date(),
+              fajr: val("fajr"),
+              dhuhr: val("dhuhr"),
+              asr: val("asr"),
+              maghrib: val("maghrib"),
+              isha: val("isha"),
+              sunrise: val("sunrise"),
+              hijriDate: val("hijri_date"),
+              companyName: val("company_name", "Sadaqa Welfare Fund"),
+              lastUpdated: val("last_updated", "Never")
+          )
+      }
+
+      private func saveToShared(_ e: SimpleEntry) {
+          guard let ud = UserDefaults(suiteName: APP_GROUP_ID) else { return }
+          ud.set(e.fajr, forKey: "fajr")
+          ud.set(e.dhuhr, forKey: "dhuhr")
+          ud.set(e.asr, forKey: "asr")
+          ud.set(e.maghrib, forKey: "maghrib")
+          ud.set(e.isha, forKey: "isha")
+          ud.set(e.sunrise, forKey: "sunrise")
+          ud.set(e.hijriDate, forKey: "hijri_date")
+          ud.set(e.companyName, forKey: "company_name")
+          ud.set(e.lastUpdated, forKey: "last_updated")
+      }
 }
 
 struct SimpleEntry: TimelineEntry {
@@ -60,7 +104,33 @@ struct SimpleEntry: TimelineEntry {
     let hijriDate: String
     let companyName: String
     let lastUpdated: String
-     
+    // Pick the next time the UI will need to change (e.g., next prayer time)
+    func nextRefreshDate() -> Date? {
+        let times = [fajr, sunrise, dhuhr, asr, maghrib, isha]
+        let now = Date()
+        let tz = TimeZone.current
+        let cal = Calendar.current
+
+        // Accept times like "05:12" and build a Date for today/tomorrow
+        func dateFor(timeStr: String) -> Date? {
+            let comps = timeStr.split(separator: ":")
+            guard comps.count >= 2,
+                  let h = Int(comps[0]), let m = Int(comps[1]) else { return nil }
+            var dc = cal.dateComponents(in: tz, from: now)
+            dc.hour = h; dc.minute = m; dc.second = 0
+            // if already passed today, move to tomorrow
+            var d = cal.date(from: DateComponents(year: dc.year, month: dc.month, day: dc.day, hour: h, minute: m, second: 0))
+            if let dUnwrapped = d, dUnwrapped <= now {
+                d = cal.date(byAdding: .day, value: 1, to: dUnwrapped)
+            }
+            return d
+        }
+
+        // Find the soonest upcoming time and refresh shortly after it
+        let upcoming = times.compactMap(dateFor(timeStr:)).sorted().first
+        return upcoming.map { cal.date(byAdding: .minute, value: 2, to: $0) ?? $0 }
+    }
+
     static let placeholder = SimpleEntry(
         date: Date(),
         fajr: "07:00",
@@ -75,35 +145,6 @@ struct SimpleEntry: TimelineEntry {
     )
 }
 
-// Next refresh = next prayer today; else just after midnight
-private extension SimpleEntry {
-    func nextRefreshDate() -> Date? {
-        let cal = Calendar.current
-        let now = Date()
-
-        func parseTimeToday(_ s: String) -> Date? {
-            let fmts = ["HH:mm","H:mm","hh:mm a","h:mm a"]
-            for df in fmts {
-                let f = DateFormatter(); f.locale = .current; f.dateFormat = df
-                if let t = f.date(from: s) {
-                    var comps = cal.dateComponents([.year,.month,.day], from: now)
-                    let hm = cal.dateComponents([.hour,.minute], from: t)
-                    comps.hour = hm.hour; comps.minute = hm.minute
-                    if let dt = cal.date(from: comps) { return dt }
-                }
-            }
-            return nil
-        }
-
-        let candidates = [fajr, sunrise, dhuhr, asr, maghrib, isha]
-            .compactMap(parseTimeToday)
-            .filter { $0 > now }
-
-        if let soonest = candidates.min() { return soonest }
-        let startOfTomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: now))!
-        return cal.date(byAdding: .minute, value: 1, to: startOfTomorrow)!
-    }
-}
 
 struct MyHomeWidgetEntryView: View {
     var entry: SimpleEntry

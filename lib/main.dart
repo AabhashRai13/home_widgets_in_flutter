@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:home_widget/home_widget.dart';
-import 'package:workmanager/workmanager.dart';
 import 'prayer_day.dart';
 
 // ====== Constants you MUST customize ======
@@ -11,34 +10,15 @@ const String kAppGroupId = 'group.homeTestScreenApp'; // iOS App Group
 const String kIOSWidgetKind = 'MyHomeWidget';
 const String kAndroidWidgetProvider =
     'MyHomeWidget'; // see Android provider name
-const String kAddress = 'Sydney NSW, Australia';  
+const String kAddress = 'Sydney NSW, Australia';
 // A unique name for WorkManager periodic task
 const String kWorkName = 'prayer_times_update';
 const String kWorkTask = 'updatePrayerTimes';
 
-// ========== Background callback ===========
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    try {
-      debugPrint('Background task started: $task');
-      if (task == kWorkTask) {
-        final prayerDay = await fetchPrayerDayBackground(kAddress);
-        await updateWidgetBackground(prayerDay);
-        debugPrint('Prayer times updated in background');
-      }
-      return Future.value(true);
-    } catch (e, st) {
-      debugPrint('Background task failed: $e\n$st');
-      return Future.value(false);
-    }
-  });
-}
-
 // ====== Network fetch helpers (BG-safe) ======
 Uri _buildUri(String address) => Uri.https(
       'apis.sadaqawelfarefund.ngo',
-      '/api/get_prayer_times',
+      '/api/get_prayer_times_for_today',
       {'address': address},
     );
 
@@ -54,44 +34,33 @@ Future<PrayerDay> fetchPrayerDayBackground(String address) async {
     throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
   }
   final decoded = jsonDecode(resp.body);
-  final List dataList = decoded is List
-      ? decoded
-      : (decoded['data'] ?? decoded['days'] ?? decoded['prayer_times'] ?? [])
-          as List;
-  if (dataList.isEmpty) throw Exception('Empty response list');
-
-  // Debug: log all items to see what we have
-  for (int i = 0; i < dataList.length; i++) {
-    final item = dataList[i] as Map<String, dynamic>;
-    log('Item $i: is_current_day = ${item['is_current_day']}');
-  }
-
-  final Map<String, dynamic> chosen = (dataList.firstWhere(
-    (e) => e is Map && e['is_current_day'] == true,
-    orElse: () => dataList.first,
-  )) as Map<String, dynamic>;
-  log('chosen: $chosen');
-  return PrayerDay.fromJson(chosen);
+  log('decoded: $decoded');
+  return PrayerDay.fromJson(decoded);
 }
 
 // Save to shared storage + ping widgets (BG-safe)
 Future<void> updateWidgetBackground(PrayerDay d) async {
-  log('updateWidgetBackground: $d');
-  for (final entry in d.asStrings().entries) {
-    await HomeWidget.saveWidgetData<String>(entry.key, entry.value);
-  }
-  // Optional metadata
-  final now = DateTime.now();
-  await HomeWidget.saveWidgetData<String>('last_updated',
-      '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}');
-  await HomeWidget.saveWidgetData<String>(
-      'company_name', 'Sadaqa Welfare Fund');
-
-  // Nudge both platforms
+  await HomeWidget.saveWidgetData('text_from_flutter_app', 'Hello Android 👋');
   await HomeWidget.updateWidget(
     iOSName: kIOSWidgetKind,
-    androidName: kAndroidWidgetProvider,
+    androidName: 'MyHomeWidget', // or qualified receiver if you use that form
   );
+  // log('updateWidgetBackground: $d');
+  // for (final entry in d.asStrings().entries) {
+  //   await HomeWidget.saveWidgetData<String>(entry.key, entry.value);
+  // }
+  // // Optional metadata
+  // final now = DateTime.now();
+  // await HomeWidget.saveWidgetData<String>('last_updated',
+  //     '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}');
+  // await HomeWidget.saveWidgetData<String>(
+  //     'company_name', 'Sadaqa Welfare Fund');
+
+  // // Nudge both platforms
+  // await HomeWidget.updateWidget(
+  //   iOSName: kIOSWidgetKind,
+  //   androidName: kAndroidWidgetProvider,
+  // );
 }
 
 // ============ App ===============
@@ -100,23 +69,6 @@ void main() async {
 
   // Set App Group for iOS
   HomeWidget.setAppGroupId(kAppGroupId);
-
-  // Initialize Workmanager
-  await Workmanager().initialize(callbackDispatcher);
-
-  // Register periodic (Android real periodic; iOS = opportunistic)
-  await Workmanager().registerPeriodicTask(
-    kWorkName,
-    kWorkTask,
-    frequency: const Duration(
-        hours: 6), // >= 15 minutes on Android; iOS ignored cadence
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-    ),
-    // Note: for iOS Workmanager just wraps BGTask; schedule is best-effort.
-  );
-
   runApp(const MyApp());
 }
 
